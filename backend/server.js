@@ -23,11 +23,18 @@ app.use('/api/reminders', reminderRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-sequelize.sync({ alter: true }).then(() => {
-  console.log('Database synced');
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+if (process.env.VERCEL) {
+  // Mode Serverless (Vercel)
+  // Ekspor app agar dikenali oleh Vercel
+  module.exports = app;
+} else {
+  // Mode Lokal (Development)
+  sequelize.sync({ alter: true }).then(() => {
+    console.log('Database synced');
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Failed to sync database:', err);
   });
-}).catch(err => {
-  console.error('Failed to sync database:', err);
-});
+}

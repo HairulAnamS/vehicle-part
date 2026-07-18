@@ -5,6 +5,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { fetchAPI } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { formatNumber, parseNumber } from '../../lib/utils';
 
 export default function Dashboard() {
   const [reminders, setReminders] = useState([]);
@@ -74,7 +75,7 @@ export default function Dashboard() {
                     {reminder.status}
                   </span>
                   <div className="mt-2 text-sm   text-slate-500">
-                    KM Saat ini: {reminder.vehicle.current_km}
+                    KM Saat ini: {formatNumber(reminder.vehicle.current_km)}
                   </div>
                 </div>
               </div>

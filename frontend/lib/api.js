@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Jika berjalan di Vercel (production), secara default gunakan endpoint '/api' yang sama dengan domain
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
 
 export const fetchAPI = async (endpoint, options = {}) => {
   let token = null;
