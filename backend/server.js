@@ -1,40 +1,37 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { sequelize } = require('./models');
+let app;
+try {
+  const { sequelize } = require('./models');
+  const authRoutes = require('./routes/auth');
+  const vehicleRoutes = require('./routes/vehicles');
+  const sparepartRoutes = require('./routes/spareparts');
+  const replacementRoutes = require('./routes/replacements');
+  const reminderRoutes = require('./routes/reminders');
 
-const authRoutes = require('./routes/auth');
-const vehicleRoutes = require('./routes/vehicles');
-const sparepartRoutes = require('./routes/spareparts');
-const replacementRoutes = require('./routes/replacements');
-const reminderRoutes = require('./routes/reminders');
+  app = express();
+  app.use(cors());
+  app.use(express.json());
 
-const app = express();
+  app.use('/api/auth', authRoutes);
+  app.use('/api/vehicles', vehicleRoutes);
+  app.use('/api/spareparts', sparepartRoutes);
+  app.use('/api/replacements', replacementRoutes);
+  app.use('/api/reminders', reminderRoutes);
 
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/spareparts', sparepartRoutes);
-app.use('/api/replacements', replacementRoutes);
-app.use('/api/reminders', reminderRoutes);
-
-const PORT = process.env.PORT || 5000;
-
-if (process.env.VERCEL) {
-  // Mode Serverless (Vercel)
-  // Ekspor app agar dikenali oleh Vercel
-  module.exports = app;
-} else {
-  // Mode Lokal (Development)
-  sequelize.sync({ alter: true }).then(() => {
-    console.log('Database synced');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }).catch(err => {
-    console.error('Failed to sync database:', err);
+  if (!process.env.VERCEL) {
+    const PORT = process.env.PORT || 5000;
+    sequelize.sync({ alter: true }).then(() => {
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    }).catch(err => console.error('Failed to sync database:', err));
+  }
+} catch (err) {
+  // Fallback app to show the actual error instead of 500 Function Crash
+  app = express();
+  app.use((req, res) => {
+    res.status(500).json({ error: 'Server initialization failed', message: err.message, stack: err.stack });
   });
 }
+
+module.exports = app;
