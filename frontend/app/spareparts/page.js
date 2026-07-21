@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { fetchAPI } from '../../lib/api';
 import { formatNumber, parseNumber } from '../../lib/utils';
+import Swal from 'sweetalert2';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Spareparts() {
+  const { user, loading: authLoading } = useAuth();
   const [spareparts, setSpareparts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', replacement_km: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,8 +19,9 @@ export default function Spareparts() {
   const [editFormData, setEditFormData] = useState({ id: '', name: '', replacement_km: '' });
 
   useEffect(() => {
+    if (authLoading || !user) return;
     loadSpareparts();
-  }, []);
+  }, [authLoading, user]);
 
   const loadSpareparts = async () => {
     try {
@@ -26,12 +30,13 @@ export default function Spareparts() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI('/spareparts', {
         method: 'POST',
@@ -40,16 +45,18 @@ export default function Spareparts() {
           replacement_km: parseInt(formData.replacement_km) || 0
         })
       });
+      Swal.close();
       setIsFormOpen(false);
       setFormData({ name: '', replacement_km: '' });
       loadSpareparts();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI(`/spareparts/${editFormData.id}`, {
         method: 'PUT',
@@ -58,22 +65,36 @@ export default function Spareparts() {
           replacement_km: parseInt(editFormData.replacement_km) || 0
         })
       });
+      Swal.close();
       setIsEditModalOpen(false);
       loadSpareparts();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus sparepart ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Anda akan menghapus sparepart ini!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       try {
         await fetchAPI(`/spareparts/${id}`, {
           method: 'DELETE'
         });
+        Swal.close();
         loadSpareparts();
       } catch (err) {
-        alert(err.message);
+        Swal.fire('Error', err.message, 'error');
       }
     }
   };
@@ -91,7 +112,7 @@ export default function Spareparts() {
     sp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <DashboardLayout>Loading...</DashboardLayout>;
+  if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -164,7 +185,7 @@ export default function Spareparts() {
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="py-3 px-4 font-bold text-slate-700">Nama Sparepart</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-right">Interval Penggantian (KM)</th>
-                <th className="py-3 px-4 font-bold text-slate-700 text-center">Aksi</th>
+                <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -172,7 +193,7 @@ export default function Spareparts() {
                 <tr key={sp.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="py-3 px-4 text-slate-800 font-medium">{sp.name}</td>
                   <td className="py-3 px-4 text-slate-600 text-right">{formatNumber(sp.replacement_km)}</td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3 px-4 text-center whitespace-nowrap">
                     <button onClick={() => openEditModal(sp)} className="text-amber-500 hover:text-amber-700 mr-3" title="Edit">
                       <i className="fa-solid fa-pen-to-square"></i>
                     </button>

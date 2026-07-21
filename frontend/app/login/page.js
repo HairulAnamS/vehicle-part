@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,7 +16,19 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    Swal.fire({
+      title: 'Memproses...',
+      text: 'Mohon tunggu sebentar.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     const res = await login(email, password);
+    Swal.close();
+
     if (!res.success) {
       setError(res.error);
     }

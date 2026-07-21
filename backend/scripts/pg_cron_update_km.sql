@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 SELECT cron.schedule('update_vehicle_km_daily', '0 0 * * *', $$
   UPDATE "Vehicles"
   SET current_km = current_km + (km_harian * (CURRENT_DATE - DATE(last_update_current_km)))
+    , last_update_current_km = current_timestamp
   WHERE DATE(last_update_current_km) < CURRENT_DATE AND km_harian > 0;
 $$);
 

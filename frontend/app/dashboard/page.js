@@ -9,15 +9,12 @@ import { formatNumber, parseNumber } from '../../lib/utils';
 
 export default function Dashboard() {
   const [reminders, setReminders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+    if (authLoading || !user) return;
 
     const loadReminders = async () => {
       try {
@@ -26,14 +23,14 @@ export default function Dashboard() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
     loadReminders();
-  }, [user, router]);
+  }, [user, authLoading]);
 
-  if (loading) return <DashboardLayout>Loading...</DashboardLayout>;
+  if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
 
   return (
     <DashboardLayout>

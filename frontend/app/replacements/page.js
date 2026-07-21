@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { fetchAPI } from '../../lib/api';
 import { formatNumber, parseNumber } from '../../lib/utils';
+import Swal from 'sweetalert2';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Replacements() {
+  const { user, loading: authLoading } = useAuth();
   const [replacements, setReplacements] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [spareparts, setSpareparts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,8 +31,9 @@ export default function Replacements() {
   });
 
   useEffect(() => {
+    if (authLoading || !user) return;
     loadData();
-  }, []);
+  }, [authLoading, user]);
 
   const loadData = async () => {
     try {
@@ -44,12 +48,13 @@ export default function Replacements() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI('/replacements', {
         method: 'POST',
@@ -60,6 +65,7 @@ export default function Replacements() {
           date_installed: formData.date_installed
         })
       });
+      Swal.close();
       setIsFormOpen(false);
       setFormData({
         vehicle_id: '',
@@ -69,12 +75,13 @@ export default function Replacements() {
       });
       loadData();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI(`/replacements/${editFormData.id}`, {
         method: 'PUT',
@@ -83,22 +90,36 @@ export default function Replacements() {
           date_installed: editFormData.date_installed
         })
       });
+      Swal.close();
       setIsEditModalOpen(false);
       loadData();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus riwayat ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Anda akan menghapus riwayat ini!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       try {
         await fetchAPI(`/replacements/${id}`, {
           method: 'DELETE'
         });
+        Swal.close();
         loadData();
       } catch (err) {
-        alert(err.message);
+        Swal.fire('Error', err.message, 'error');
       }
     }
   };
@@ -127,7 +148,7 @@ export default function Replacements() {
     return vehName.includes(searchLower) || spName.includes(searchLower);
   });
 
-  if (loading) return <DashboardLayout>Loading...</DashboardLayout>;
+  if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -255,7 +276,7 @@ export default function Replacements() {
                 <th className="py-3 px-4 font-bold text-slate-700">Kendaraan</th>
                 <th className="py-3 px-4 font-bold text-slate-700">Sparepart</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-right">KM Terpasang</th>
-                <th className="py-3 px-4 font-bold text-slate-700 text-center">Aksi</th>
+                <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -265,7 +286,7 @@ export default function Replacements() {
                   <td className="py-3 px-4 font-medium text-slate-800">{rep.vehicle?.nopol}</td>
                   <td className="py-3 px-4 text-slate-700">{rep.sparepart?.name}</td>
                   <td className="py-3 px-4 text-slate-600 text-right font-medium">{formatNumber(rep.km_installed)}</td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3 px-4 text-center whitespace-nowrap">
                     <button 
                       onClick={() => openEditModal(rep)}
                       className="text-amber-500 hover:text-amber-700 mr-3" title="Edit"

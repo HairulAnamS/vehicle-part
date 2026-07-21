@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { fetchAPI } from '../../lib/api';
 import { formatNumber, parseNumber } from '../../lib/utils';
+import Swal from 'sweetalert2';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Vehicles() {
+  const { user, loading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
     nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: ''
@@ -24,8 +27,9 @@ export default function Vehicles() {
   });
 
   useEffect(() => {
+    if (authLoading || !user) return;
     loadVehicles();
-  }, []);
+  }, [authLoading, user]);
 
   const loadVehicles = async () => {
     try {
@@ -34,12 +38,13 @@ export default function Vehicles() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI('/vehicles', {
         method: 'POST',
@@ -49,16 +54,18 @@ export default function Vehicles() {
           km_harian: parseInt(formData.km_harian) || 0
         })
       });
+      Swal.close();
       setIsFormOpen(false);
       setFormData({ nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: '' });
       loadVehicles();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI(`/vehicles/${editFormData.id}`, {
         method: 'PUT',
@@ -71,39 +78,55 @@ export default function Vehicles() {
           km_harian: parseInt(editFormData.km_harian) || 0
         })
       });
+      Swal.close();
       setIsEditFormOpen(false);
       loadVehicles();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleUpdateKm = async (e) => {
     e.preventDefault();
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
       await fetchAPI(`/vehicles/${updateKmData.id}/km`, {
         method: 'PUT',
         body: JSON.stringify({ current_km: parseInt(updateKmData.current_km) })
       });
+      Swal.close();
       setIsUpdateKmOpen(false);
       loadVehicles();
     } catch (err) {
-      alert(err.message);
+      Swal.fire('Error', err.message, 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus kendaraan ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Anda akan menghapus kendaraan ini!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       try {
         await fetchAPI(`/vehicles/${id}`, {
           method: 'DELETE'
         });
+        Swal.close();
         loadVehicles();
       } catch (err) {
         if (err.message.includes('riwayat')) {
-          alert('Peringatan: Kendaraan tidak dapat dihapus karena masih ada riwayat pergantian sparepart yang terkait dengan kendaraan ini.');
+          Swal.fire('Peringatan', 'Kendaraan tidak dapat dihapus karena masih ada riwayat pergantian sparepart yang terkait dengan kendaraan ini.', 'warning');
         } else {
-          alert(err.message);
+          Swal.fire('Error', err.message, 'error');
         }
       }
     }
@@ -127,7 +150,7 @@ export default function Vehicles() {
     setIsEditFormOpen(true);
   };
 
-  if (loading) return <DashboardLayout>Loading...</DashboardLayout>;
+  if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
 
   return (
     <DashboardLayout>
