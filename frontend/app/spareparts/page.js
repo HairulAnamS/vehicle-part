@@ -94,7 +94,11 @@ export default function Spareparts() {
         Swal.close();
         loadSpareparts();
       } catch (err) {
-        Swal.fire('Error', err.message, 'error');
+        if (err.message.includes('riwayat')) {
+          Swal.fire('Peringatan', err.message, 'warning');
+        } else {
+          Swal.fire('Error', err.message, 'error');
+        }
       }
     }
   };

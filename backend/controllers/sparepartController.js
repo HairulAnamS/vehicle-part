@@ -1,4 +1,4 @@
-const { Sparepart } = require('../models');
+const { Sparepart, Replacement } = require('../models');
 
 exports.getAllSpareparts = async (req, res) => {
   try {
@@ -49,6 +49,11 @@ exports.deleteSparepart = async (req, res) => {
     const sparepart = await Sparepart.findByPk(id);
     if (!sparepart) {
       return res.status(404).json({ error: 'Sparepart not found' });
+    }
+
+    const replacementCount = await Replacement.count({ where: { sparepart_id: id } });
+    if (replacementCount > 0) {
+      return res.status(400).json({ error: 'Tidak dapat menghapus sparepart karena terdapat riwayat pergantian terkait.' });
     }
 
     await sparepart.destroy();
