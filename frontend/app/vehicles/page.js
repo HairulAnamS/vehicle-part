@@ -6,14 +6,16 @@ import { fetchAPI } from '../../lib/api';
 import { formatNumber, parseNumber } from '../../lib/utils';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../context/AuthContext';
+import InfoTooltip from '../../components/InfoTooltip';
 
 export default function Vehicles() {
   const { user, loading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState([]);
+  const [spareparts, setSpareparts] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
-    nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: ''
+    nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: '', sparepart_settings: []
   });
 
   // Modal for Update KM
@@ -23,7 +25,7 @@ export default function Vehicles() {
   // Modal for Edit Vehicle
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    id: '', nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: ''
+    id: '', nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: '', sparepart_settings: [], original_sparepart_ids: []
   });
 
   useEffect(() => {
@@ -33,8 +35,12 @@ export default function Vehicles() {
 
   const loadVehicles = async () => {
     try {
-      const data = await fetchAPI('/vehicles');
-      setVehicles(data);
+      const [vehiclesData, sparepartsData] = await Promise.all([
+        fetchAPI('/vehicles'),
+        fetchAPI('/spareparts')
+      ]);
+      setVehicles(vehiclesData);
+      setSpareparts(sparepartsData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -51,12 +57,13 @@ export default function Vehicles() {
         body: JSON.stringify({
           ...formData,
           current_km: parseInt(formData.current_km) || 0,
-          km_harian: parseInt(formData.km_harian) || 0
+          km_harian: parseInt(formData.km_harian) || 0,
+          sparepart_settings: formData.sparepart_settings
         })
       });
       Swal.close();
       setIsFormOpen(false);
-      setFormData({ nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: '' });
+      setFormData({ nopol: '', type: 'Motor', brand: '', model: '', current_km: '', km_harian: '', sparepart_settings: [] });
       loadVehicles();
     } catch (err) {
       Swal.fire('Error', err.message, 'error');
@@ -75,7 +82,8 @@ export default function Vehicles() {
           brand: editFormData.brand,
           model: editFormData.model,
           current_km: parseInt(editFormData.current_km) || 0,
-          km_harian: parseInt(editFormData.km_harian) || 0
+          km_harian: parseInt(editFormData.km_harian) || 0,
+          sparepart_settings: editFormData.sparepart_settings
         })
       });
       Swal.close();
@@ -145,9 +153,35 @@ export default function Vehicles() {
       brand: vehicle.brand,
       model: vehicle.model,
       current_km: vehicle.current_km,
-      km_harian: vehicle.km_harian || 0
+      km_harian: vehicle.km_harian || 0,
+      sparepart_settings: vehicle.sparepart_settings || [],
+      original_sparepart_ids: (vehicle.sparepart_settings || []).map(s => s.sparepart_id)
     });
     setIsEditFormOpen(true);
+  };
+
+  const handleSettingChange = (sparepartId, field, value, isEdit = false) => {
+    const targetState = isEdit ? editFormData : formData;
+    const setTargetState = isEdit ? setEditFormData : setFormData;
+    
+    let newSettings = [...(targetState.sparepart_settings || [])];
+    const index = newSettings.findIndex(s => s.sparepart_id === sparepartId);
+    
+    if (index >= 0) {
+      newSettings[index][field] = value === '' ? '' : parseNumber(value);
+    } else {
+      const newSetting = { sparepart_id: sparepartId, replacement_km: '', last_km_installed: '' };
+      newSetting[field] = value === '' ? '' : parseNumber(value);
+      newSettings.push(newSetting);
+    }
+    
+    setTargetState({ ...targetState, sparepart_settings: newSettings });
+  };
+
+  const getSettingValue = (sparepartId, field, isEdit = false) => {
+    const targetState = isEdit ? editFormData : formData;
+    const setting = (targetState.sparepart_settings || []).find(s => s.sparepart_id === sparepartId);
+    return setting && setting[field] !== undefined && setting[field] !== null && setting[field] !== '' ? formatNumber(setting[field]) : '';
   };
 
   if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
@@ -192,9 +226,53 @@ export default function Vehicles() {
               <input type="text" value={formatNumber(formData.current_km)} onChange={(e) => setFormData({...formData, current_km: parseNumber(e.target.value)})} className="input-field" required placeholder="Misal: 15.000" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Estimasi KM Harian</label>
+              <label className="block text-sm font-medium mb-1">
+                Estimasi KM Harian
+                <InfoTooltip text="Perkiraan jarak tempuh rata-rata kendaraan setiap harinya. Digunakan sistem untuk memprediksi kapan Anda harus ganti sparepart." />
+              </label>
               <input type="text" value={formatNumber(formData.km_harian)} onChange={(e) => setFormData({...formData, km_harian: parseNumber(e.target.value)})} className="input-field" required placeholder="Misal: 50" />
             </div>
+            
+            <div className="md:col-span-2 mt-4 pt-4 border-t border-slate-200">
+              <h4 className="font-bold text-slate-700 mb-3">Setting Interval Ganti Sparepart (Per KM)</h4>
+              <p className="text-sm text-slate-500 mb-4">Kosongkan jika tidak ingin mendapatkan reminder untuk sparepart tersebut.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {spareparts.filter(sp => sp.type === 'All' || sp.type === formData.type).map(sp => (
+                  <div key={sp.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <label className="block font-bold text-slate-700 mb-2 line-clamp-1" title={sp.name}>{sp.name}</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">
+                          Interval KM
+                          <InfoTooltip text="Batas jarak tempuh (KM) anjuran sebelum sparepart ini harus diganti lagi." />
+                        </label>
+                        <input 
+                          type="text" 
+                          value={getSettingValue(sp.id, 'replacement_km', false)}
+                          onChange={(e) => handleSettingChange(sp.id, 'replacement_km', e.target.value, false)}
+                          className="w-full text-sm p-2 border border-slate-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                          placeholder="Misal: 2000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">
+                          KM Terakhir Ganti
+                          <InfoTooltip text="Angka di Odometer saat Anda terakhir kali mengganti part ini. Isi dengan 0 jika masih bawaan pabrik." />
+                        </label>
+                        <input 
+                          type="text" 
+                          value={getSettingValue(sp.id, 'last_km_installed', false)}
+                          onChange={(e) => handleSettingChange(sp.id, 'last_km_installed', e.target.value, false)}
+                          className="w-full text-sm p-2 border border-slate-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                          placeholder="Misal: 15000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="md:col-span-2 flex justify-end gap-2 mt-4">
               <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
               <button type="submit" className="btn-primary">Simpan</button>
@@ -231,9 +309,58 @@ export default function Vehicles() {
               <input type="text" value={formatNumber(editFormData.current_km)} onChange={(e) => setEditFormData({...editFormData, current_km: parseNumber(e.target.value)})} className="input-field" required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Estimasi KM Harian</label>
+              <label className="block text-sm font-medium mb-1">
+                Estimasi KM Harian
+                <InfoTooltip text="Perkiraan jarak tempuh rata-rata kendaraan setiap harinya. Digunakan sistem untuk memprediksi kapan Anda harus ganti sparepart." />
+              </label>
               <input type="text" value={formatNumber(editFormData.km_harian)} onChange={(e) => setEditFormData({...editFormData, km_harian: parseNumber(e.target.value)})} className="input-field" required />
             </div>
+
+            <div className="md:col-span-2 mt-4 pt-4 border-t border-slate-200">
+              <h4 className="font-bold text-slate-700 mb-3">Setting Interval Ganti Sparepart (Per KM)</h4>
+              <p className="text-sm text-slate-500 mb-4">Kosongkan jika tidak ingin mendapatkan reminder untuk sparepart tersebut.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {spareparts.filter(sp => sp.type === 'All' || sp.type === editFormData.type).map(sp => {
+                  const isNewSetting = !(editFormData.original_sparepart_ids || []).includes(sp.id);
+                  return (
+                    <div key={sp.id} className="bg-amber-50/50 p-3 rounded-lg border border-amber-100">
+                      <label className="block font-bold text-slate-700 mb-2 line-clamp-1" title={sp.name}>{sp.name}</label>
+                      <div className={`grid ${isNewSetting ? 'grid-cols-2 gap-2' : 'grid-cols-1'}`}>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">
+                            Interval KM
+                            <InfoTooltip text="Batas jarak tempuh (KM) anjuran sebelum sparepart ini harus diganti lagi." />
+                          </label>
+                          <input 
+                            type="text" 
+                            value={getSettingValue(sp.id, 'replacement_km', true)}
+                            onChange={(e) => handleSettingChange(sp.id, 'replacement_km', e.target.value, true)}
+                            className="w-full text-sm p-2 border border-slate-300 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all"
+                            placeholder="Misal: 2000"
+                          />
+                        </div>
+                        {isNewSetting && (
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">
+                              KM Terakhir Ganti
+                              <InfoTooltip text="Angka di Odometer saat Anda terakhir kali mengganti part ini. Isi dengan 0 jika masih bawaan pabrik." />
+                            </label>
+                            <input 
+                              type="text" 
+                              value={getSettingValue(sp.id, 'last_km_installed', true)}
+                              onChange={(e) => handleSettingChange(sp.id, 'last_km_installed', e.target.value, true)}
+                              className="w-full text-sm p-2 border border-slate-300 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all"
+                              placeholder="Misal: 15000"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="md:col-span-2 flex justify-end gap-2 mt-4">
               <button type="button" onClick={() => setIsEditFormOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
               <button type="submit" className="btn-primary bg-amber-500 hover:bg-amber-600">Update Kendaraan</button>

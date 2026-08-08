@@ -12,11 +12,11 @@ export default function Spareparts() {
   const [spareparts, setSpareparts] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', replacement_km: '' });
+  const [formData, setFormData] = useState({ name: '', type: 'All' });
   const [searchTerm, setSearchTerm] = useState('');
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({ id: '', name: '', replacement_km: '' });
+  const [editFormData, setEditFormData] = useState({ id: '', name: '', type: 'All' });
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -42,12 +42,12 @@ export default function Spareparts() {
         method: 'POST',
         body: JSON.stringify({
           name: formData.name,
-          replacement_km: parseInt(formData.replacement_km) || 0
+          type: formData.type
         })
       });
       Swal.close();
       setIsFormOpen(false);
-      setFormData({ name: '', replacement_km: '' });
+      setFormData({ name: '', type: 'All' });
       loadSpareparts();
     } catch (err) {
       Swal.fire('Error', err.message, 'error');
@@ -62,7 +62,7 @@ export default function Spareparts() {
         method: 'PUT',
         body: JSON.stringify({
           name: editFormData.name,
-          replacement_km: parseInt(editFormData.replacement_km) || 0
+          type: editFormData.type
         })
       });
       Swal.close();
@@ -107,7 +107,7 @@ export default function Spareparts() {
     setEditFormData({
       id: sp.id,
       name: sp.name,
-      replacement_km: sp.replacement_km
+      type: sp.type || 'All'
     });
     setIsEditModalOpen(true);
   };
@@ -123,11 +123,13 @@ export default function Spareparts() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Master Sparepart</h2>
-          <p className="text-slate-500">Kelola jenis sparepart dan interval pergantiannya</p>
+          <p className="text-slate-500">Daftar jenis sparepart yang tersedia</p>
         </div>
-        <button onClick={() => setIsFormOpen(true)} className="btn-primary whitespace-nowrap">
-          + Tambah Sparepart
-        </button>
+        {user?.is_admin && (
+          <button onClick={() => setIsFormOpen(true)} className="btn-primary whitespace-nowrap">
+            + Tambah Sparepart
+          </button>
+        )}
       </div>
 
       {isFormOpen && (
@@ -139,8 +141,12 @@ export default function Spareparts() {
               <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="input-field" required placeholder="Contoh: Oli Mesin" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Setting Ganti (Per KM)</label>
-              <input type="text" value={formatNumber(formData.replacement_km)} onChange={(e) => setFormData({...formData, replacement_km: parseNumber(e.target.value)})} className="input-field" required placeholder="Contoh: 2.000" />
+              <label className="block text-sm font-medium mb-1">Tipe Kendaraan</label>
+              <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="input-field" required>
+                <option value="All">Semua Tipe (Motor & Mobil)</option>
+                <option value="Motor">Khusus Motor</option>
+                <option value="Mobil">Khusus Mobil</option>
+              </select>
             </div>
             <div className="md:col-span-2 flex justify-end gap-2 mt-4">
               <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
@@ -160,8 +166,12 @@ export default function Spareparts() {
                 <input type="text" value={editFormData.name} onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} className="input-field" required />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Setting Ganti (Per KM)</label>
-                <input type="text" value={formatNumber(editFormData.replacement_km)} onChange={(e) => setEditFormData({...editFormData, replacement_km: parseNumber(e.target.value)})} className="input-field" required />
+                <label className="block text-sm font-medium mb-1">Tipe Kendaraan</label>
+                <select value={editFormData.type} onChange={(e) => setEditFormData({...editFormData, type: e.target.value})} className="input-field" required>
+                  <option value="All">Semua Tipe (Motor & Mobil)</option>
+                  <option value="Motor">Khusus Motor</option>
+                  <option value="Mobil">Khusus Mobil</option>
+                </select>
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
@@ -188,23 +198,29 @@ export default function Spareparts() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="py-3 px-4 font-bold text-slate-700">Nama Sparepart</th>
-                <th className="py-3 px-4 font-bold text-slate-700 text-right">Interval Penggantian (KM)</th>
-                <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>
+                <th className="py-3 px-4 font-bold text-slate-700">Tipe Kendaraan</th>
+                {user?.is_admin && <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>}
               </tr>
             </thead>
             <tbody>
               {filteredSpareparts.map((sp) => (
                 <tr key={sp.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="py-3 px-4 text-slate-800 font-medium">{sp.name}</td>
-                  <td className="py-3 px-4 text-slate-600 text-right">{formatNumber(sp.replacement_km)}</td>
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    <button onClick={() => openEditModal(sp)} className="text-amber-500 hover:text-amber-700 mr-3" title="Edit">
-                      <i className="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button onClick={() => handleDelete(sp.id)} className="text-red-500 hover:text-red-700" title="Hapus">
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
+                  <td className="py-3 px-4 text-slate-600">
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${sp.type === 'Motor' ? 'bg-blue-100 text-blue-800' : sp.type === 'Mobil' ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800'}`}>
+                      {sp.type}
+                    </span>
                   </td>
+                  {user?.is_admin && (
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <button onClick={() => openEditModal(sp)} className="text-amber-500 hover:text-amber-700 mr-3" title="Edit">
+                        <i className="fa-solid fa-pen-to-square"></i>
+                      </button>
+                      <button onClick={() => handleDelete(sp.id)} className="text-red-500 hover:text-red-700" title="Hapus">
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredSpareparts.length === 0 && (

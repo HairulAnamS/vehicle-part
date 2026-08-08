@@ -1,4 +1,4 @@
-const { Vehicle, Sparepart, Replacement, sequelize } = require('../models');
+const { Vehicle, Sparepart, Replacement, VehicleSparepart, sequelize } = require('../models');
 
 exports.getReminders = async (req, res) => {
   try {
@@ -9,8 +9,14 @@ exports.getReminders = async (req, res) => {
     }
     const vehicleIds = vehicles.map(v => v.id);
 
-    // 2. For each vehicle, get the LATEST replacement for each sparepart
-    // Note: We use a raw query or find all and group in memory to make it easier for Sequelize
+    // 2. Fetch all VehicleSparepart settings for these vehicles
+    const settings = await VehicleSparepart.findAll({ where: { vehicle_id: vehicleIds } });
+    const settingsMap = new Map();
+    settings.forEach(s => {
+      settingsMap.set(`${s.vehicle_id}-${s.sparepart_id}`, s.replacement_km);
+    });
+
+    // 3. For each vehicle, get the LATEST replacement for each sparepart
     const replacements = await Replacement.findAll({
       where: { vehicle_id: vehicleIds },
       include: [
@@ -30,9 +36,14 @@ exports.getReminders = async (req, res) => {
 
     const reminders = [];
     latestReplacementsMap.forEach((rep) => {
+      const key = `${rep.vehicle_id}-${rep.sparepart_id}`;
+      const replacementInterval = settingsMap.get(key);
+      
+      // Jika tidak ada setting interval untuk kendaraan dan sparepart ini, lewati (tidak ada reminder)
+      if (!replacementInterval) return;
+
       const currentKm = rep.vehicle.current_km;
       const kmInstalled = rep.km_installed;
-      const replacementInterval = rep.sparepart.replacement_km;
       
       const kmSinceReplacement = currentKm - kmInstalled;
       const kmRemaining = replacementInterval - kmSinceReplacement;

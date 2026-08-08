@@ -3,6 +3,7 @@ const User = require('./User');
 const Vehicle = require('./Vehicle');
 const Sparepart = require('./Sparepart');
 const Replacement = require('./Replacement');
+const VehicleSparepart = require('./VehicleSparepart');
 
 // Associations
 User.hasMany(Vehicle, { foreignKey: 'user_id', as: 'vehicles' });
@@ -14,10 +15,17 @@ Replacement.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
 Sparepart.hasMany(Replacement, { foreignKey: 'sparepart_id', as: 'replacements' });
 Replacement.belongsTo(Sparepart, { foreignKey: 'sparepart_id', as: 'sparepart' });
 
+Vehicle.hasMany(VehicleSparepart, { foreignKey: 'vehicle_id', as: 'sparepart_settings' });
+VehicleSparepart.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
+
+Sparepart.hasMany(VehicleSparepart, { foreignKey: 'sparepart_id', as: 'vehicle_settings' });
+VehicleSparepart.belongsTo(Sparepart, { foreignKey: 'sparepart_id', as: 'sparepart' });
+
 module.exports = {
   sequelize,
   User,
   Vehicle,
   Sparepart,
-  Replacement
+  Replacement,
+  VehicleSparepart
 };

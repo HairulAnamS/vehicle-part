@@ -30,7 +30,15 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
-      router.push('/dashboard');
+      
+      const seenGuideKey = `hasSeenGuide_${data.user.id}`;
+      if (!localStorage.getItem(seenGuideKey)) {
+        localStorage.setItem(seenGuideKey, 'true');
+        router.push('/panduan');
+      } else {
+        router.push('/dashboard');
+      }
+      
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };

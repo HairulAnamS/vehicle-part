@@ -1,26 +1,26 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Sparepart = sequelize.define('Sparepart', {
+const VehicleSparepart = sequelize.define('VehicleSparepart', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  name: {
-    type: DataTypes.STRING,
+  vehicle_id: {
+    type: DataTypes.UUID,
     allowNull: false,
   },
-  type: {
-    type: DataTypes.STRING,
-    defaultValue: 'All',
+  sparepart_id: {
+    type: DataTypes.UUID,
     allowNull: false,
-    validate: {
-      isIn: [['Motor', 'Mobil', 'All']]
-    }
+  },
+  replacement_km: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   }
 }, {
   timestamps: true,
 });
 
-module.exports = Sparepart;
+module.exports = VehicleSparepart;

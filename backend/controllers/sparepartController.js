@@ -11,10 +11,10 @@ exports.getAllSpareparts = async (req, res) => {
 
 exports.createSparepart = async (req, res) => {
   try {
-    const { name, replacement_km } = req.body;
+    const { name, type } = req.body;
     const sparepart = await Sparepart.create({
       name,
-      replacement_km
+      type: type || 'All'
     });
     res.status(201).json(sparepart);
   } catch (err) {
@@ -25,7 +25,7 @@ exports.createSparepart = async (req, res) => {
 exports.updateSparepart = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, replacement_km } = req.body;
+    const { name, type } = req.body;
     
     const sparepart = await Sparepart.findByPk(id);
     if (!sparepart) {
@@ -33,7 +33,7 @@ exports.updateSparepart = async (req, res) => {
     }
 
     sparepart.name = name;
-    sparepart.replacement_km = replacement_km;
+    if (type) sparepart.type = type;
     await sparepart.save();
     
     res.json(sparepart);

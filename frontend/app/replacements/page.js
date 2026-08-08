@@ -6,6 +6,7 @@ import { fetchAPI } from '../../lib/api';
 import { formatNumber, parseNumber } from '../../lib/utils';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../context/AuthContext';
+import InfoTooltip from '../../components/InfoTooltip';
 
 export default function Replacements() {
   const { user, loading: authLoading } = useAuth();
@@ -170,7 +171,7 @@ export default function Replacements() {
               <label className="block text-sm font-medium mb-1">Pilih Kendaraan</label>
               <select 
                 value={formData.vehicle_id} 
-                onChange={(e) => setFormData({...formData, vehicle_id: e.target.value})} 
+                onChange={(e) => setFormData({...formData, vehicle_id: e.target.value, sparepart_id: ''})} 
                 className="input-field" 
                 required
               >
@@ -185,17 +186,31 @@ export default function Replacements() {
               <select 
                 value={formData.sparepart_id} 
                 onChange={(e) => setFormData({...formData, sparepart_id: e.target.value})} 
-                className="input-field" 
+                className="input-field disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed disabled:border-slate-200" 
                 required
+                disabled={!formData.vehicle_id}
               >
-                <option value="">-- Pilih Sparepart --</option>
-                {spareparts.map(sp => (
-                  <option key={sp.id} value={sp.id}>{sp.name} (Ganti tiap {formatNumber(sp.replacement_km)} KM)</option>
-                ))}
+                <option value="">
+                  {formData.vehicle_id ? "-- Pilih Sparepart --" : "-- Pilih Kendaraan Dulu --"}
+                </option>
+                {formData.vehicle_id && vehicles
+                  .find(v => v.id === formData.vehicle_id)?.sparepart_settings
+                  ?.map(setting => {
+                    const sp = spareparts.find(s => s.id === setting.sparepart_id);
+                    if (!sp) return null;
+                    return (
+                      <option key={sp.id} value={sp.id}>
+                        {sp.name} (Ganti tiap {formatNumber(setting.replacement_km)} KM)
+                      </option>
+                    );
+                  })}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">KM Saat Dipasang</label>
+              <label className="block text-sm font-medium mb-1">
+                KM Saat Dipasang
+                <InfoTooltip text="Angka yang tertera di Odometer kendaraan Anda saat baru saja mengganti sparepart ini." />
+              </label>
               <input 
                 type="text" 
                 value={formatNumber(formData.km_installed)} 
@@ -229,7 +244,10 @@ export default function Replacements() {
             <h3 className="text-lg font-bold mb-4">Edit Riwayat</h3>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">KM Saat Dipasang</label>
+                <label className="block text-sm font-medium mb-1">
+                  KM Saat Dipasang
+                  <InfoTooltip text="Angka yang tertera di Odometer kendaraan Anda saat baru saja mengganti sparepart ini." />
+                </label>
                 <input 
                   type="text" 
                   value={formatNumber(editFormData.km_installed)} 

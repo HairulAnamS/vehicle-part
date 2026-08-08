@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Kendaraan', href: '/vehicles', icon: 'fa-car' },
     { name: 'Sparepart', href: '/spareparts', icon: 'fa-toolbox' },
     { name: 'Riwayat Ganti', href: '/replacements', icon: 'fa-clock-rotate-left' },
+    { name: 'Panduan', href: '/panduan', icon: 'fa-circle-question' },
   ];
 
   return (
