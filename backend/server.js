@@ -9,6 +9,7 @@ try {
   const sparepartRoutes = require('./routes/spareparts');
   const replacementRoutes = require('./routes/replacements');
   const reminderRoutes = require('./routes/reminders');
+  const cronRoutes = require('./routes/cron');
 
   app = express();
   app.use(cors());
@@ -19,6 +20,7 @@ try {
   app.use('/api/spareparts', sparepartRoutes);
   app.use('/api/replacements', replacementRoutes);
   app.use('/api/reminders', reminderRoutes);
+  app.use('/api/cron', cronRoutes);
 
   if (!process.env.VERCEL) {
     const PORT = process.env.PORT || 5000;

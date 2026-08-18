@@ -4,10 +4,14 @@ const Vehicle = require('./Vehicle');
 const Sparepart = require('./Sparepart');
 const Replacement = require('./Replacement');
 const VehicleSparepart = require('./VehicleSparepart');
+const ReminderHistory = require('./ReminderHistory');
 
 // Associations
 User.hasMany(Vehicle, { foreignKey: 'user_id', as: 'vehicles' });
 Vehicle.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(ReminderHistory, { foreignKey: 'user_id', as: 'reminder_histories' });
+ReminderHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 Vehicle.hasMany(Replacement, { foreignKey: 'vehicle_id', as: 'replacements' });
 Replacement.belongsTo(Vehicle, { foreignKey: 'vehicle_id', as: 'vehicle' });
@@ -27,5 +31,6 @@ module.exports = {
   Vehicle,
   Sparepart,
   Replacement,
-  VehicleSparepart
+  VehicleSparepart,
+  ReminderHistory
 };

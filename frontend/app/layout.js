@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'Vehicle Part Reminder',
   description: 'Aplikasi pengingat pergantian sparepart kendaraan',
+  icons: {
+    icon: '/wrench-icon.png'
+  },
 };
 
 export default function RootLayout({ children }) {
