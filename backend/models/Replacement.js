@@ -26,6 +26,15 @@ const Replacement = sequelize.define('Replacement', {
   notes: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  cost: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: true,
+  },
+  workshop_name: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,

@@ -23,6 +23,8 @@ export default function Replacements() {
     sparepart_id: '',
     km_installed: '',
     date_installed: new Date().toISOString().split('T')[0],
+    cost: '',
+    workshop_name: '',
     notes: ''
   });
 
@@ -30,6 +32,8 @@ export default function Replacements() {
     id: '',
     km_installed: '',
     date_installed: '',
+    cost: '',
+    workshop_name: '',
     notes: ''
   });
 
@@ -66,6 +70,8 @@ export default function Replacements() {
           sparepart_id: formData.sparepart_id,
           km_installed: parseInt(formData.km_installed) || 0,
           date_installed: formData.date_installed,
+          cost: parseInt(formData.cost) || 0,
+          workshop_name: formData.workshop_name,
           notes: formData.notes
         })
       });
@@ -76,6 +82,8 @@ export default function Replacements() {
         sparepart_id: '',
         km_installed: '',
         date_installed: new Date().toISOString().split('T')[0],
+        cost: '',
+        workshop_name: '',
         notes: ''
       });
       loadData();
@@ -93,6 +101,8 @@ export default function Replacements() {
         body: JSON.stringify({
           km_installed: parseInt(editFormData.km_installed) || 0,
           date_installed: editFormData.date_installed,
+          cost: parseInt(editFormData.cost) || 0,
+          workshop_name: editFormData.workshop_name,
           notes: editFormData.notes
         })
       });
@@ -135,6 +145,8 @@ export default function Replacements() {
       id: rep.id,
       km_installed: rep.km_installed,
       date_installed: new Date(rep.date_installed).toISOString().split('T')[0],
+      cost: rep.cost || '',
+      workshop_name: rep.workshop_name || '',
       notes: rep.notes || ''
     });
     setIsEditModalOpen(true);
@@ -152,8 +164,9 @@ export default function Replacements() {
     const searchLower = searchTerm.toLowerCase();
     const vehName = `${rep.vehicle?.nopol} ${rep.vehicle?.brand} ${rep.vehicle?.model}`.toLowerCase();
     const spName = rep.sparepart?.name?.toLowerCase() || '';
+    const workshopText = rep.workshop_name?.toLowerCase() || '';
     const notesText = rep.notes?.toLowerCase() || '';
-    return vehName.includes(searchLower) || spName.includes(searchLower) || notesText.includes(searchLower);
+    return vehName.includes(searchLower) || spName.includes(searchLower) || workshopText.includes(searchLower) || notesText.includes(searchLower);
   });
 
   if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
@@ -237,6 +250,26 @@ export default function Replacements() {
                 required 
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Biaya (Rp) (Opsional)</label>
+              <input 
+                type="text" 
+                value={formatNumber(formData.cost)} 
+                onChange={(e) => setFormData({...formData, cost: parseNumber(e.target.value)})} 
+                className="input-field" 
+                placeholder="Contoh: 150.000" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nama Bengkel (Opsional)</label>
+              <input 
+                type="text" 
+                value={formData.workshop_name} 
+                onChange={(e) => setFormData({...formData, workshop_name: e.target.value})} 
+                className="input-field" 
+                placeholder="Contoh: Bengkel AHASS / Mandiri" 
+              />
+            </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
               <textarea
@@ -284,6 +317,26 @@ export default function Replacements() {
                 />
               </div>
               <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Biaya (Rp) (Opsional)</label>
+                <input 
+                  type="text" 
+                  value={formatNumber(editFormData.cost)} 
+                  onChange={(e) => setEditFormData({...editFormData, cost: parseNumber(e.target.value)})} 
+                  className="input-field" 
+                  placeholder="Contoh: 150.000" 
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Nama Bengkel (Opsional)</label>
+                <input 
+                  type="text" 
+                  value={editFormData.workshop_name} 
+                  onChange={(e) => setEditFormData({...editFormData, workshop_name: e.target.value})} 
+                  className="input-field" 
+                  placeholder="Contoh: Bengkel AHASS / Mandiri" 
+                />
+              </div>
+              <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
                 <textarea
                   rows={2}
@@ -307,7 +360,7 @@ export default function Replacements() {
           <i className="fa-solid fa-search text-slate-400 mr-2"></i>
           <input 
             type="text" 
-            placeholder="Cari riwayat ganti (Nopol, Kendaraan, Sparepart, Catatan)..." 
+            placeholder="Cari riwayat ganti (Nopol, Kendaraan, Sparepart, Bengkel, Catatan)..." 
             className="w-full bg-transparent border-none outline-none focus:ring-0 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -321,6 +374,8 @@ export default function Replacements() {
                 <th className="py-3 px-4 font-bold text-slate-700">Kendaraan</th>
                 <th className="py-3 px-4 font-bold text-slate-700">Sparepart</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-right">KM Terpasang</th>
+                <th className="py-3 px-4 font-bold text-slate-700">Bengkel</th>
+                <th className="py-3 px-4 font-bold text-slate-700 text-right">Biaya</th>
                 <th className="py-3 px-4 font-bold text-slate-700">Catatan</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>
               </tr>
@@ -332,6 +387,10 @@ export default function Replacements() {
                   <td className="py-3 px-4 font-medium text-slate-800">{rep.vehicle?.nopol}</td>
                   <td className="py-3 px-4 text-slate-700">{rep.sparepart?.name}</td>
                   <td className="py-3 px-4 text-slate-600 text-right font-medium">{formatNumber(rep.km_installed)}</td>
+                  <td className="py-3 px-4 text-slate-600 text-sm">{rep.workshop_name || '-'}</td>
+                  <td className="py-3 px-4 text-slate-700 text-right font-medium whitespace-nowrap">
+                    {rep.cost ? `Rp ${formatNumber(rep.cost)}` : '-'}
+                  </td>
                   <td className="py-3 px-4 text-slate-600 text-sm max-w-xs break-words">{rep.notes || '-'}</td>
                   <td className="py-3 px-4 text-center whitespace-nowrap">
                     <button 
@@ -351,7 +410,7 @@ export default function Replacements() {
               ))}
               {filteredReplacements.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="py-8 text-center text-slate-500">
+                  <td colSpan="8" className="py-8 text-center text-slate-500">
                     Belum ada riwayat pergantian.
                   </td>
                 </tr>

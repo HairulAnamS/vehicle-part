@@ -9,6 +9,9 @@ exports.triggerReminders = async (req, res) => {
     let processedCount = 0;
 
     for (const user of users) {
+      if (user.email_reminder_enabled === false) {
+        continue;
+      }
       const reminders = await getUserReminders(user.id);
 
       if (reminders.length > 0) {
