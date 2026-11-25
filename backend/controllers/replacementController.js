@@ -20,7 +20,7 @@ exports.getAllReplacements = async (req, res) => {
 
 exports.createReplacement = async (req, res) => {
   try {
-    const { vehicle_id, sparepart_id, km_installed, date_installed } = req.body;
+    const { vehicle_id, sparepart_id, km_installed, date_installed, notes } = req.body;
     
     // Verify vehicle belongs to user
     const vehicle = await Vehicle.findOne({ where: { id: vehicle_id, user_id: req.user.id } });
@@ -32,7 +32,8 @@ exports.createReplacement = async (req, res) => {
       vehicle_id,
       sparepart_id,
       km_installed,
-      date_installed: date_installed || new Date()
+      date_installed: date_installed || new Date(),
+      notes: notes || null
     });
     
     // Also update vehicle's current km if the km_installed is higher
@@ -50,7 +51,7 @@ exports.createReplacement = async (req, res) => {
 exports.updateReplacement = async (req, res) => {
   try {
     const { id } = req.params;
-    const { km_installed, date_installed } = req.body;
+    const { km_installed, date_installed, notes } = req.body;
     
     const replacement = await Replacement.findByPk(id, {
       include: [{ model: Vehicle, as: 'vehicle', where: { user_id: req.user.id } }]
@@ -62,6 +63,9 @@ exports.updateReplacement = async (req, res) => {
 
     replacement.km_installed = km_installed;
     replacement.date_installed = date_installed;
+    if (notes !== undefined) {
+      replacement.notes = notes || null;
+    }
     await replacement.save();
 
     res.json(replacement);

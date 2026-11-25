@@ -22,13 +22,15 @@ export default function Replacements() {
     vehicle_id: '',
     sparepart_id: '',
     km_installed: '',
-    date_installed: new Date().toISOString().split('T')[0]
+    date_installed: new Date().toISOString().split('T')[0],
+    notes: ''
   });
 
   const [editFormData, setEditFormData] = useState({
     id: '',
     km_installed: '',
-    date_installed: ''
+    date_installed: '',
+    notes: ''
   });
 
   useEffect(() => {
@@ -63,7 +65,8 @@ export default function Replacements() {
           vehicle_id: formData.vehicle_id,
           sparepart_id: formData.sparepart_id,
           km_installed: parseInt(formData.km_installed) || 0,
-          date_installed: formData.date_installed
+          date_installed: formData.date_installed,
+          notes: formData.notes
         })
       });
       Swal.close();
@@ -72,7 +75,8 @@ export default function Replacements() {
         vehicle_id: '',
         sparepart_id: '',
         km_installed: '',
-        date_installed: new Date().toISOString().split('T')[0]
+        date_installed: new Date().toISOString().split('T')[0],
+        notes: ''
       });
       loadData();
     } catch (err) {
@@ -88,7 +92,8 @@ export default function Replacements() {
         method: 'PUT',
         body: JSON.stringify({
           km_installed: parseInt(editFormData.km_installed) || 0,
-          date_installed: editFormData.date_installed
+          date_installed: editFormData.date_installed,
+          notes: editFormData.notes
         })
       });
       Swal.close();
@@ -129,7 +134,8 @@ export default function Replacements() {
     setEditFormData({
       id: rep.id,
       km_installed: rep.km_installed,
-      date_installed: new Date(rep.date_installed).toISOString().split('T')[0]
+      date_installed: new Date(rep.date_installed).toISOString().split('T')[0],
+      notes: rep.notes || ''
     });
     setIsEditModalOpen(true);
   };
@@ -146,7 +152,8 @@ export default function Replacements() {
     const searchLower = searchTerm.toLowerCase();
     const vehName = `${rep.vehicle?.nopol} ${rep.vehicle?.brand} ${rep.vehicle?.model}`.toLowerCase();
     const spName = rep.sparepart?.name?.toLowerCase() || '';
-    return vehName.includes(searchLower) || spName.includes(searchLower);
+    const notesText = rep.notes?.toLowerCase() || '';
+    return vehName.includes(searchLower) || spName.includes(searchLower) || notesText.includes(searchLower);
   });
 
   if (authLoading || dataLoading) return <DashboardLayout>Loading...</DashboardLayout>;
@@ -230,6 +237,16 @@ export default function Replacements() {
                 required 
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
+              <textarea
+                rows={2}
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                className="input-field"
+                placeholder="Contoh: Merk oli, nama bengkel, atau catatan lainnya..."
+              />
+            </div>
             <div className="md:col-span-2 flex justify-end gap-2 mt-4">
               <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
               <button type="submit" className="btn-primary">Simpan</button>
@@ -266,6 +283,16 @@ export default function Replacements() {
                   required 
                 />
               </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
+                <textarea
+                  rows={2}
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  className="input-field"
+                  placeholder="Contoh: Merk oli, nama bengkel, atau catatan lainnya..."
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
                 <button type="submit" className="btn-primary bg-amber-500 hover:bg-amber-600">Update</button>
@@ -280,7 +307,7 @@ export default function Replacements() {
           <i className="fa-solid fa-search text-slate-400 mr-2"></i>
           <input 
             type="text" 
-            placeholder="Cari riwayat ganti (Nopol, Kendaraan, Sparepart)..." 
+            placeholder="Cari riwayat ganti (Nopol, Kendaraan, Sparepart, Catatan)..." 
             className="w-full bg-transparent border-none outline-none focus:ring-0 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -294,6 +321,7 @@ export default function Replacements() {
                 <th className="py-3 px-4 font-bold text-slate-700">Kendaraan</th>
                 <th className="py-3 px-4 font-bold text-slate-700">Sparepart</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-right">KM Terpasang</th>
+                <th className="py-3 px-4 font-bold text-slate-700">Catatan</th>
                 <th className="py-3 px-4 font-bold text-slate-700 text-center w-24 whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
@@ -304,6 +332,7 @@ export default function Replacements() {
                   <td className="py-3 px-4 font-medium text-slate-800">{rep.vehicle?.nopol}</td>
                   <td className="py-3 px-4 text-slate-700">{rep.sparepart?.name}</td>
                   <td className="py-3 px-4 text-slate-600 text-right font-medium">{formatNumber(rep.km_installed)}</td>
+                  <td className="py-3 px-4 text-slate-600 text-sm max-w-xs break-words">{rep.notes || '-'}</td>
                   <td className="py-3 px-4 text-center whitespace-nowrap">
                     <button 
                       onClick={() => openEditModal(rep)}
@@ -322,7 +351,7 @@ export default function Replacements() {
               ))}
               {filteredReplacements.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-slate-500">
+                  <td colSpan="6" className="py-8 text-center text-slate-500">
                     Belum ada riwayat pergantian.
                   </td>
                 </tr>

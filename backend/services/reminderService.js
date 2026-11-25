@@ -57,12 +57,21 @@ exports.getUserReminders = async (userId) => {
         message: `Waktunya mengganti ${rep.sparepart.name} pada ${rep.vehicle.nopol} (Terlewat ${Math.abs(kmRemaining)} KM)`
       });
     } else if (kmRemaining <= 500) { // e.g. Warning if < 500km left
+      let estimatedReplacementDate = null;
+      if (rep.vehicle.km_harian && rep.vehicle.km_harian > 0) {
+        const daysRemaining = Math.ceil(kmRemaining / rep.vehicle.km_harian);
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + daysRemaining);
+        estimatedReplacementDate = targetDate.toISOString();
+      }
+
       reminders.push({
         id: rep.id,
         vehicle: rep.vehicle,
         sparepart: rep.sparepart,
         status: 'WARNING',
         km_remaining: kmRemaining,
+        estimated_replacement_date: estimatedReplacementDate,
         message: `${rep.sparepart.name} pada ${rep.vehicle.nopol} perlu diganti dalam ${kmRemaining} KM`
       });
     }

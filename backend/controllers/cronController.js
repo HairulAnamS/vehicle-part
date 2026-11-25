@@ -32,13 +32,25 @@ exports.triggerReminders = async (req, res) => {
         for (const reminder of reminders) {
           const statusColor = reminder.status === 'OVERDUE' ? '#dc3545' : '#ffc107';
           const statusText = reminder.status === 'OVERDUE' ? 'Terlewat' : 'Peringatan';
+          let messageContent = reminder.message;
+
+          if (reminder.status === 'WARNING') {
+            const estimatedDateText = reminder.estimated_replacement_date
+              ? new Date(reminder.estimated_replacement_date).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : '- (KM harian belum diatur)';
+            messageContent += `<br><span style="font-size: 12px; color: #856404;">Perkiraan ganti: ${estimatedDateText}</span>`;
+          }
 
           htmlContent += `
             <tr>
               <td style="padding: 10px; border: 1px solid #dee2e6;">${reminder.vehicle.nopol}</td>
               <td style="padding: 10px; border: 1px solid #dee2e6;">${reminder.sparepart.name}</td>
               <td style="padding: 10px; border: 1px solid #dee2e6; color: ${statusColor}; font-weight: bold;">${statusText}</td>
-              <td style="padding: 10px; border: 1px solid #dee2e6;">${reminder.message}</td>
+              <td style="padding: 10px; border: 1px solid #dee2e6;">${messageContent}</td>
             </tr>
           `;
         }

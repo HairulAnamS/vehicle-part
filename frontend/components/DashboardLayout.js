@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, isSidebarCollapsed, toggleSidebar } = useAuth();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,12 +38,31 @@ export default function DashboardLayout({ children }) {
       </div>
 
       {/* Sidebar */}
-      <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-full md:w-64 bg-blue-900 text-white flex-shrink-0`}>
-        <div className="p-6 hidden md:block">
-          <h1 className="text-2xl font-bold tracking-tight"><i className="fa-solid fa-wrench mr-2"></i>Vehicle Part</h1>
+      <div
+        className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:flex md:flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto w-full ${
+          isSidebarCollapsed ? 'md:w-20' : 'md:w-64'
+        } bg-blue-900 text-white flex-shrink-0 transition-all duration-200`}
+      >
+        <div className={`hidden md:flex items-center ${isSidebarCollapsed ? 'justify-center px-3' : 'justify-between px-6'} py-6`}>
+          {!isSidebarCollapsed && (
+            <h1 className="text-2xl font-bold tracking-tight whitespace-nowrap">
+              <i className="fa-solid fa-wrench mr-2"></i>Vehicle Part
+            </h1>
+          )}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg text-blue-200 hover:bg-blue-800 hover:text-white transition-colors"
+            title={isSidebarCollapsed ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
+            aria-label={isSidebarCollapsed ? 'Perluas Sidebar' : 'Kecilkan Sidebar'}
+          >
+            <i className={`fa-solid ${isSidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'}`}></i>
+          </button>
         </div>
-        <div className="px-4 py-2">
-          <p className="text-sm text-blue-200 mb-6 px-2">Halo, {user?.name}</p>
+        <div className={`${isSidebarCollapsed ? 'md:px-2' : 'md:px-4'} px-4 py-2 flex-1`}>
+          {!isSidebarCollapsed && (
+            <p className="text-sm text-blue-200 mb-6 px-2 truncate">Halo, {user?.name}</p>
+          )}
           <nav className="space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -51,23 +70,26 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`block px-4 py-2.5 rounded-lg transition-colors ${
+                  title={isSidebarCollapsed ? item.name : undefined}
+                  className={`flex items-center ${isSidebarCollapsed ? 'md:justify-center md:px-2' : ''} px-4 py-2.5 rounded-lg transition-colors ${
                     isActive 
                       ? 'bg-blue-800 text-white font-medium' 
                       : 'text-blue-100 hover:bg-blue-800 hover:text-white'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <i className={`fa-solid ${item.icon} hidden md:inline-block w-6`}></i>
-                  {item.name}
+                  <i className={`fa-solid ${item.icon} hidden md:inline-block ${isSidebarCollapsed ? 'text-lg' : 'w-6'}`}></i>
+                  <span className={isSidebarCollapsed ? 'md:hidden' : ''}>{item.name}</span>
                 </Link>
               );
             })}
             <button 
               onClick={logout}
-              className="w-full text-left px-4 py-2.5 mt-4 rounded-lg text-red-300 hover:bg-red-900/50 transition-colors"
+              title={isSidebarCollapsed ? 'Logout' : undefined}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'md:justify-center md:px-2' : ''} text-left px-4 py-2.5 mt-4 rounded-lg text-red-300 hover:bg-red-900/50 transition-colors`}
             >
-              Logout
+              <i className={`fa-solid fa-right-from-bracket hidden md:inline-block ${isSidebarCollapsed ? 'text-lg' : 'w-6'}`}></i>
+              <span className={isSidebarCollapsed ? 'md:hidden' : ''}>Logout</span>
             </button>
           </nav>
         </div>

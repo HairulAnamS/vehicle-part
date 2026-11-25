@@ -9,17 +9,30 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    const savedSidebar = localStorage.getItem('sidebarCollapsed');
     
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    if (savedSidebar === 'true') {
+      setIsSidebarCollapsed(true);
+    }
     setLoading(false);
   }, []);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebarCollapsed', String(next));
+      return next;
+    });
+  };
 
   const login = async (email, password) => {
     try {
@@ -65,7 +78,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, isSidebarCollapsed, toggleSidebar }}>
       {children}
     </AuthContext.Provider>
   );

@@ -71,7 +71,19 @@ export default function Dashboard() {
                   }`}>
                     {reminder.status}
                   </span>
-                  <div className="mt-2 text-sm   text-slate-500">
+                  {reminder.status === 'WARNING' && (
+                    <div className="mt-2 text-sm font-medium text-amber-800">
+                      Perkiraan ganti:{' '}
+                      {reminder.estimated_replacement_date
+                        ? new Date(reminder.estimated_replacement_date).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })
+                        : '- (KM harian belum diatur)'}
+                    </div>
+                  )}
+                  <div className="mt-1 text-sm text-slate-500">
                     KM Saat ini: {formatNumber(reminder.vehicle.current_km)}
                   </div>
                 </div>

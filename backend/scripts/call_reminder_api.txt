@@ -1,2 +1,5 @@
 curl -X GET http://localhost:5000/api/cron/send-reminders \
   -H "Authorization: Bearer my_super_secret_cron_key_123"
+
+curl -X GET https://vehicle-part-backend.vercel.app/api/cron/send-reminders \
+  -H "Authorization: Bearer my_super_secret_cron_key_123"

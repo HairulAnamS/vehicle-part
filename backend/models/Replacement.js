@@ -22,6 +22,10 @@ const Replacement = sequelize.define('Replacement', {
   date_installed: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   }
 }, {
   timestamps: true,
